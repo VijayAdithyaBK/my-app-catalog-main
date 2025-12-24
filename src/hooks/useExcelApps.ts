@@ -30,7 +30,7 @@ const parseCommaSeparated = (value: string | undefined): string[] => {
 const parseScreenshots = (urls?: string, alts?: string): Screenshot[] => {
   const urlList = parseCommaSeparated(urls);
   const altList = parseCommaSeparated(alts);
-  
+
   return urlList.map((url, index) => ({
     url,
     alt: altList[index] || `Screenshot ${index + 1}`
@@ -39,7 +39,7 @@ const parseScreenshots = (urls?: string, alts?: string): Screenshot[] => {
 
 const transformRow = (row: ExcelRow): AppData => {
   const now = new Date().toISOString();
-  
+
   return {
     id: String(row.id || ''),
     name: String(row.name || ''),
@@ -63,21 +63,25 @@ const transformRow = (row: ExcelRow): AppData => {
 };
 
 const fetchAppsFromExcel = async (): Promise<AppData[]> => {
-  const response = await fetch('/data/apps.xlsx');
-  
+  // Use BASE_URL for GitHub Pages deployment
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const excelPath = `${baseUrl}data/apps.xlsx`;
+
+  const response = await fetch(excelPath);
+
   if (!response.ok) {
     console.warn('No apps.xlsx found, returning empty array');
     return [];
   }
-  
+
   const arrayBuffer = await response.arrayBuffer();
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-  
+
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
-  
+
   const rows: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
-  
+
   return rows.map(transformRow).filter(app => app.id && app.name);
 };
 
@@ -91,7 +95,7 @@ export const useExcelApps = () => {
 
 export const useExcelApp = (id: string) => {
   const { data: apps, ...rest } = useExcelApps();
-  
+
   return {
     ...rest,
     data: apps?.find(app => app.id === id)
